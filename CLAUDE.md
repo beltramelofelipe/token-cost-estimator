@@ -35,6 +35,7 @@ Takes a string and a model name, returns `(total_tokens, cost)`.
 |---|---|
 | `gpt-4o` | $2.50 |
 | `gpt-4o-mini` | $0.15 |
+| `gpt-4-turbo` | $10.00 |
 | `gpt-3.5-turbo` | $0.50 |
 
 **Cost formula:**
@@ -73,24 +74,38 @@ pip install docling tiktoken
 
 - **Language:** Python, snake_case naming, PEP 8 style
 - **No docstrings or inline comments** currently in the codebase — add them if introducing new functions
-- **No error handling** — the script will raise exceptions on network failures, unsupported models, or malformed documents
-- **Pricing is hardcoded** in the `pricing` dict inside `estimate_cost`; update it there when OpenAI changes prices
-- **Output language:** Portuguese (`Relatório de Processamento`, `Tokens detectados`, `Custo estimado`)
+- **Error handling** — `ValueError` para modelo inválido ou texto vazio; erros genéricos encerram com `sys.exit(1)`
+- **Pricing is hardcoded** na constante `PRICING` no topo do arquivo; atualize lá quando os preços mudarem
+- **Output language:** Portuguese (`Relatório de Processamento`, `Custo`, `Tokens`)
 - **No environment variables** — no API keys required (Docling fetches PDFs directly, tiktoken works offline)
+- **CLI args:** `sys.argv[1]` = source (URL ou path), `sys.argv[2]` = model name
 
 ---
 
 ## Running the Script
 
 ```bash
+# Uso básico (URL e modelo padrão)
 python token-cost.py
+
+# URL customizada
+python token-cost.py https://arxiv.org/pdf/2408.09869
+
+# URL + modelo específico
+python token-cost.py https://arxiv.org/pdf/2408.09869 gpt-4o-mini
+
+# Arquivo local
+python token-cost.py /caminho/para/documento.pdf gpt-4-turbo
 ```
 
 Expected output:
 ```
-📊 Relatório de Processamento:
---- Tokens detectados: <N>
---- Custo estimado (Input): $<price>
+⏳ Convertendo documento: https://...
+📊 Relatório de Processamento
+   Fonte  : https://...
+   Modelo : gpt-4o  ($2.50 / 1M tokens)
+   Tokens : 12,345
+   Custo  : $0.0309 USD
 ```
 
 Note: First run downloads the Docling model weights — this may take several minutes.
@@ -103,7 +118,8 @@ Note: First run downloads the Docling model weights — this may take several mi
 - No output token cost estimation (only input tokens)
 - `tiktoken` is OpenAI-specific; it does not tokenize correctly for Anthropic, Google, or other providers
 - No test suite exists — validate behavior manually by comparing token counts against the OpenAI Tokenizer playground
-- `pricing.get(model_name, 0)` silently returns $0 for unknown models rather than raising an error
+- Modelo inválido agora lança `ValueError` com lista dos modelos suportados (não retorna $0 silenciosamente)
+- `tiktoken` é específico para OpenAI — não tokeniza corretamente para Anthropic, Google, etc.
 
 ---
 
